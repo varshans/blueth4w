@@ -71,6 +71,7 @@ if [[ ! -d $SRC ]]; then
   git -C "$SRC" apply "$REPO/src/ipod_sun_nano7_104.patch"
 fi
 TOOL="$SRC/untether/ipod_sun_untethered"
+cp "$REPO/src/payload_bt_patch.rs" "$TOOL/src/payload/bt_patch.rs"
 
 # ---- carrier font from YOUR firmware ----
 say "extracting Helvetica from your IPSW and building the CFF carrier"
