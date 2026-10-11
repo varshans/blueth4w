@@ -22,20 +22,24 @@ esac; done
 [[ $(uname -s) == Linux ]] || { echo "flashing must run on Linux (not $(uname -s))." >&2; exit 1; }
 
 # ---- wInd3x: use a provided binary, or build from source (needs go) ----
+supports_firmware(){ "$1" restore --help 2>/dev/null | grep -q -- '--firmware'; }
 W="${WIND3X:-}"
 if [[ -z $W ]]; then
   BUILD="$REPO/.build"; mkdir -p "$BUILD"
   W="$BUILD/wInd3x"
-  if [[ ! -x $W ]]; then
+  if [[ ! -x $W ]] || ! supports_firmware "$W"; then
     command -v go >/dev/null || { echo "need 'go' to build wInd3x, or set WIND3X=/path/to/wInd3x" >&2; exit 1; }
     command -v git >/dev/null || { echo "need git" >&2; exit 1; }
     echo ">> building wInd3x @ ${WIND3X_COMMIT:0:12}"
     rm -rf "$BUILD/wInd3x-src"
     git clone -q "$WIND3X_URL" "$BUILD/wInd3x-src"
     git -C "$BUILD/wInd3x-src" checkout -q "$WIND3X_COMMIT"
+    bash "$REPO/release/copy-wind3x-patch.sh" "$BUILD/wind3x-nano7.patch"
+    git -C "$BUILD/wInd3x-src" apply "$BUILD/wind3x-nano7.patch"
     ( cd "$BUILD/wInd3x-src" && go build -o "$W" ./cmd/wInd3x )
   fi
 fi
+supports_firmware "$W" || { echo "wInd3x lacks restore --firmware support: $W" >&2; exit 1; }
 
 command -v lsusb >/dev/null && { lsusb | grep -q "05ac:1234" || {
   echo "nano not in DFU (need 05ac:1234 in lsusb). Enter DFU and retry." >&2; exit 1; }; }
